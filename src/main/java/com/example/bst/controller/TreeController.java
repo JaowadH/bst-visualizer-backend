@@ -4,6 +4,8 @@ import com.example.bst.dto.TreeRequest;
 import com.example.bst.dto.TreeResponse;
 import com.example.bst.dto.TreeSummary;
 import com.example.bst.service.TreeService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,12 +20,14 @@ public class TreeController {
 
     public TreeController(TreeService service) { this.service = service; }
 
-    @PostMapping
+    // CREATE
+    @PostMapping(consumes = "application/json", produces = "application/json")
     public TreeResponse create(@RequestBody TreeRequest req) throws Exception {
         return service.create(req);
     }
 
-    @GetMapping
+    // LIST (paged)
+    @GetMapping(produces = "application/json")
     public Map<String, Object> list(
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "20") int limit
@@ -32,8 +36,25 @@ public class TreeController {
         return Map.of("items", items, "total", items.size());
     }
 
-    @GetMapping("/{id}")
+    // GET BY ID
+    @GetMapping(path = "/{id}", produces = "application/json")
     public TreeResponse get(@PathVariable UUID id) throws Exception {
         return service.get(id);
+    }
+
+    // --- TEMP: echo raw JSON to verify request body reaches the server as JSON ---
+    @PostMapping(path = "/_raw", consumes = "application/json", produces = "application/json")
+    public Map<String, Object> raw(@RequestBody Map<String, Object> body) {
+        return body;
+    }
+
+    // Better 400 message when JSON can't bind to TreeRequest
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public Map<String, Object> badJson(HttpMessageNotReadableException ex) {
+        return Map.of(
+                "error", "Invalid JSON for TreeRequest",
+                "detail", ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage()
+        );
     }
 }
