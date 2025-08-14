@@ -1,18 +1,24 @@
 package com.example.bst.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
-public class CorsConfig implements WebMvcConfigurer {
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                .allowedOrigins(
-                        "https://<your-firebase-app>.web.app",
-                        "https://<your-firebase-app>.firebaseapp.com"
-                )
-                .allowedMethods("GET", "POST", "OPTIONS");
+public class CorsConfig {
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.addAllowedOrigin("https://<your-app>.web.app");
+        cfg.addAllowedOrigin("https://<your-app>.firebaseapp.com");
+        cfg.addAllowedMethod("*");
+        cfg.addAllowedHeader("*");
+        cfg.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return new CorsFilter(source);
     }
 }
