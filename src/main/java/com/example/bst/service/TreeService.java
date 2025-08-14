@@ -24,7 +24,8 @@ public class TreeService {
     }
 
     public TreeResponse create(TreeRequest req) throws Exception {
-        List<Integer> nums = (req != null && req.numbers() != null) ? req.numbers() : List.of();
+        // CHANGED: use getters instead of record-style accessors
+        List<Integer> nums = (req != null && req.getNumbers() != null) ? req.getNumbers() : List.of();
 
         BstBuilder.Node bst = BstBuilder.build(nums);
         String bstJson = om.writeValueAsString(bst);
@@ -33,7 +34,8 @@ public class TreeService {
         JsonNode balancedNode = null;
         String balancedJson = null;
 
-        if (req != null && req.balanced()) {
+        // CHANGED: use isBalanced()
+        if (req != null && req.isBalanced()) {
             BstBuilder.Node bb = BstBuilder.buildBalanced(nums);
             balancedJson = om.writeValueAsString(bb);
             balancedNode = om.readTree(balancedJson);
