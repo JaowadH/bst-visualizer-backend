@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# don't run two deploys at once for the same branch
+# avoid overlapping deploys on same branch
 concurrency:
   group: render-deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -19,13 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Run tests
         run: mvn -B -ntp test
 
@@ -37,10 +35,7 @@ jobs:
     env:
       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
       RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-      # optional secret to toggle cache clearing; defaults to true
-      CLEAR_CACHE: ${{ secrets.RENDER_CLEAR_CACHE || 'true' }}
       COMMIT_ID: ${{ github.sha }}
-
     steps:
       - name: Validate required secrets
         run: |
@@ -48,25 +43,16 @@ jobs:
           [ -n "${RENDER_SERVICE_ID:-}" ] || { echo "Missing secret: RENDER_SERVICE_ID"; exit 1; }
           [ -n "${RENDER_API_KEY:-}" ]   || { echo "Missing secret: RENDER_API_KEY"; exit 1; }
 
-      - name: Normalize CLEAR_CACHE to boolean
-        id: norm
-        run: |
-          cc=false
-          case "${CLEAR_CACHE,,}" in
-            true|1|yes|y) cc=true ;;
-          esac
-          echo "cc=$cc" >> "$GITHUB_OUTPUT"
+      - name: Ensure jq is available
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Trigger Render deploy (clean build)
         id: trigger
         run: |
           set -euo pipefail
-          # Build JSON safely with jq
-          payload=$(jq -n \
-            --arg commitId "${COMMIT_ID}" \
-            --argjson clearCache "${{ steps.norm.outputs.cc }}" \
-            '{commitId: $commitId, clearCache: $clearCache}')
-          echo "Payload: $payload"
+          # Build JSON safely; hardcode clearCache as true (boolean)
+          payload=$(jq -n --arg commitId "${COMMIT_ID}" '{commitId:$commitId, clearCache:true}')
+          echo "Payload (masked in logs): $payload"
 
           resp=$(curl -sS -X POST \
             "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
@@ -91,13 +77,11 @@ jobs:
               "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys/$id")
             status=$(echo "$resp" | jq -r '.status')
             echo "[$i] status=$status"
-
             case "$status" in
               live)     echo "Deploy is live ✅"; exit 0 ;;
               failed)   echo "Deploy failed ❌"; echo "$resp"; exit 1 ;;
               canceled) echo "Deploy canceled 🛑"; echo "$resp"; exit 1 ;;
             esac
-
             sleep 10
           done
 
