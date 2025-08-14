@@ -11,8 +11,8 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.addAllowedOrigin("https://<your-app>.web.app");
-        cfg.addAllowedOrigin("https://<your-app>.firebaseapp.com");
+        cfg.addAllowedOrigin("https://bst-visualizer-frontend.web.app");
+        cfg.addAllowedOrigin("https://bst-visualizer-frontend.firebaseapp.com");
         cfg.addAllowedMethod("*");
         cfg.addAllowedHeader("*");
         cfg.setAllowCredentials(true);
