@@ -11,10 +11,12 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.addAllowedOrigin("https://bst-visualizer-frontend.web.app");
-        cfg.addAllowedOrigin("https://bst-visualizer-frontend.firebaseapp.com");
-        cfg.addAllowedMethod("*");
+        cfg.addAllowedOrigin("http://localhost:5173");              // dev
+        cfg.addAllowedOriginPattern("http://localhost:*");          // any local port (optional)
+        cfg.addAllowedOrigin("https://<your-app>.web.app");         // firebase prod
+        cfg.addAllowedOrigin("https://<your-app>.firebaseapp.com"); // firebase prod
         cfg.addAllowedHeader("*");
+        cfg.addAllowedMethod("*");
         cfg.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -22,3 +24,4 @@ public class CorsConfig {
         return new CorsFilter(source);
     }
 }
+
